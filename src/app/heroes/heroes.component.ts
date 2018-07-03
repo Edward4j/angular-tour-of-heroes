@@ -41,4 +41,20 @@ export class HeroesComponent implements OnInit {
         //reduce number of heroes displayed to four
   }
 
+  /** Add a new hero */
+  add(name: string): void {
+    name = name.trim();
+    if (!name) { return; }
+    this.heroService.addHero({ name } as Hero)
+      .subscribe(hero => {
+        this.heroes.push(hero);
+      });
+  }
+
+  /** Delete hero */
+  /** At the end we must subscribe anyway! */
+  delete(hero: Hero): void {
+    this.heroes = this.heroes.filter(h => h !== hero);
+    this.heroService.deleteHero(hero).subscribe();
+  }
 }
