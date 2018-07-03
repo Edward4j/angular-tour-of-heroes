@@ -1,30 +1,82 @@
 import { Injectable } from '@angular/core';
 import { Hero } from './hero';
-import { HEROES } from './mock-heroes';
+// import { HEROES } from './mock-heroes'; // Now we load hero detail from mock server
 import { Observable, of } from 'rxjs';
 import { MessageService } from './message.service';
+
+// import HTTP symbols that we need:
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { catchError, map, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HeroService {
 
-  constructor(private messageService: MessageService) { }
+  constructor(
+    private http: HttpClient,
+    private messageService: MessageService) { }
+
+
+  /** Log a HeroService message with the MessageService */
+  private log(message: string) {
+    this.messageService.add('HeroService: ' + message);
+  }
+
+  private heroesUrl = 'api/heroes'; // URL to web api
 
   // getHeroes(): Hero[] {
   //   return HEROES;
   // }
 
   //Second Implementation with Observable class from RxJS library:
+  // getHeroes(): Observable<Hero[]> {
+  //   // TODO: send the message _after_ fetching the Heroes
+  //   this.messageService.add('HeroService: fetched heroes');
+  //   return of(HEROES);
+  // }
+
+  // Convert that method - getHeroes() - to use HttpClient
+  /** GET heroes from the server */
   getHeroes(): Observable<Hero[]> {
-    // TODO: send the message _after_ fetching the Heroes
-    this.messageService.add('HeroService: fetched heroes');
-    return of(HEROES);
+    // this.log(`fetched heroes`);
+    return this.http.get<Hero[]>(this.heroesUrl)
+      .pipe(
+        tap(heroes => this.log(`fetched heroes`)),
+        catchError(this.handleError('getHeroes', []))
+      );
   }
 
+  /** TODO overridden below */
+  // getHero(id: number): Observable<Hero> {
+  //   // TODO: send the message _after_ fetching the hero
+  //   this.messageService.add(`HeroService: fetched hero id=${id}`);
+  //   return of(HEROES.find(hero => hero.id === id));
+  // }
+  /** Change this method to get hero by id from server request: Most web APIs support a get by id request in the form api/hero/:id (such as api/hero/11). */
+  /** GET hero by id. Will 404 if id not found */
   getHero(id: number): Observable<Hero> {
-    // TODO: send the message _after_ fetching the hero
-    this.messageService.add(`HeroService: fetched hero id=${id}`);
-    return of(HEROES.find(hero => hero.id === id));
+    const url = `${this.heroesUrl}/${id}`;
+    return this.http.get<Hero>(url).pipe(
+      tap(_ => this.log(`fetched hero id=${id}`))
+    );
   }
+
+  /**
+ * Handle Http operation that failed.
+ * Let the app continue.
+ * @param operation - name of the operation that failed
+ * @param result - optional value to return as the observable result
+ */
+ private handleError<T> (operation = 'operation', result?: T) {
+   return (error: any): Observable<T> => {
+
+     // TODO: send the error to remote logging infrastructure
+     this.log(`${operation} failed: ${error.message}`);
+
+     // Let the app keep running by returning an empty result.
+     return of(result as T);
+   }
+ }
+
 }
